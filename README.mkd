@@ -1,81 +1,60 @@
-# Unphone Game Controller
-## Project Overview
+# GeeyBoard
+## Unphone 9 (ESP32-S3) NimBLE Keyboard Project
 
-This project configures an Unphone device (ESP32-S3 based) to act as a game controller. It can trigger a "jump" action in a game running on a local computer by:
+This project implements a custom Bluetooth Low Energy (BLE) Keyboard using the Unphone 9 development board (which features the ESP32-S3 microcontroller) and the highly optimized NimBLE stack. The NimBLE stack is preferred over the traditional Bluedroid stack for its smaller memory footprint and improved performance, making it ideal for resource-constrained devices like the Unphone.
 
-1.  Detecting a physical "flick up" gesture using its onboard IMU (accelerometer and gyroscope).
-2.  Responding to a "JUMP" button press on button 1.
+## 🤝 Contributing
 
-When either trigger occurs, the Unphone sends an HTTP GET request to a specified endpoint (`/jump` and `/jump2` for player1 and player2 respectively) on a game server running on the local network.
+This project is based on the work of the open-source community. If you find issues or have suggestions for the code, please feel free to fork the repository and submit a pull request.
 
-## Features
 
-* **Contextual Flick-to-Jump:** Utilises the LSM6DS3TRC IMU to detect an upward flicking motion. This feature is **only active when the "DinoGame Controller" UI screen is displayed**
-    * Configurable sensitivity thresholds for gyroscope and accelerometer.
-    * Cooldown period to prevent multiple triggers from a single flick.
-* **Button-Based Jump Trigger:**
-    * Utilises Unphone’s Button 1 to trigger jump manually.
-    * Button 3 is made to be as a TV remote control, specifically LG TV, power button. (This functionality is made for fun utilising external library by [crankyoldgit](https://github.com/crankyoldgit/IRremoteESP8266) )
-* **Network Communication:**
-    * Connects to Wi-Fi using `WiFiMulti`.
-    * Sends a "jump" command to a configurable game server via an HTTP GET request using `HTTPClient`.
-* **Custom Unphone UI:**
-    * A new "DinoGame Controller" screen was added to the Unphone's main menu system.
-    * Integrates with the Unphone's existing GFX-based UI framework (`unPhoneUI0` from `everything`).
-    * This screen features a visual indicator with player number.
-    * Demonstrates adding new screens and menu items.
+## Getting Started 
 
-## Hardware Requirements
+These instructions will get you a copy of the project up and running on your local machine for development and testing on the Unphone 9 hardware.
 
-* Unphone device (unphone 9).
-* Onboard IMU (specifically configured for Adafruit_LSM6DS3TRC).
+### Prerequisites
+You will need the following software installed:
 
-## Software Components (ESP32 - Unphone Side)
+* PlatformIO IDE: Installed as an extension for Visual Studio Code (VSCode).
 
-The project is primarily structured around the main sketch (`sketch.ino`) and the `unPhoneLibrary` (consisting of `unPhone.h`, `unPhone.cpp`, `unPhoneUI0.h`, `unPhoneUI0.cpp`).
+* Git: The Git command-line tool must be installed on your system and accessible from the PATH, as PlatformIO uses it to download dependencies directly from GitHub repositories.
 
-### 1. Main Sketch (`sketch.ino`)
+* Unphone 9 Development Board: The specific ESP32-S3 based hardware this project is designed for.
 
-* **Wi-Fi Setup:** Initializes and manages Wi-Fi connection using `WiFiMulti` and credentials (ideally from `private.h`).
-* **IMU Initialization:** Sets up the `Adafruit_LSM6DS3TRC` sensor, including I2C communication, accelerometer range, and gyroscope range in `setup()`.
-* **Flick Detection Logic:**
-    * Continuously reads accelerometer and gyroscope data in the main `loop()`.
-    * Compares primary gyroscope axis data (e.g., `gyro_event.gyro.x`) against `FLICK_GYRO_X_THRESHOLD`.
-    * Compares primary accelerometer axis data (e.g., `accel_event.acceleration.y`) against `FLICK_ACCEL_Y_THRESHOLD`.
-    * Implements `FLICK_COOLDOWN_MS` to prevent rapid re-triggering.
-* **Button Press Detection:**
-    * In the `loop()`, call `u.button1()` (a method of the `unPhone` class) to check if the UI jump button was pressed.
-    * u.button3() is called to fire a burst of infrared signal matching command to power on/off a TV that is receiving NEC protocol.
-* **HTTP Client Logic:**
-    * Uses `HTTPClient.h`.
-    * When either a flick is detected or the button1 is pressed, it constructs an HTTP GET request (e.g., to `http://<host>:<port>/jump`).
-    * Sends the request and handles the response code.
-    * Calls `http.end()` to release resources.
+## 🛠️ Usage
 
-### 2. Unphone Core Library (`unPhone.h`, `unPhone.cpp`)
+### 1. Pairing the Device
 
-* Provides hardware abstraction for various Unphone features (display, touch, buttons, power, etc.).
-* **Jump Trigger Mechanism:**
-    * `bool m_dinoGameStarted`: A private member variable to store the state of the UI.
-    * `void setDinoGameFlag(bool)`: Public method called by the UI to set `m_dinoGameStarted` to true/false.
-    * `bool getDinoGameFlag()`: Public method called by `sketch.ino` to check if `m_dinoGameStarted` is true.
+* Connect your Unphone 9 board to your computer.
+* Open the PlatformIO Terminal and monitor the serial output.
+* Upload the code to your Unphone 9 board.
+* Once the sketch starts, the Unphone 9 will begin advertising as a BLE device.
+* On your host machine (PC, phone, tablet), go to the Bluetooth settings and look for the device name configured in your sketch (e.g., "ESP32 NimBLE Keyboard").
+* Pair the device.
 
-### 3. Unphone UI (`unPhoneUI0.h`, `unPhoneUI0.cpp`)
+### 2. Sending Keystrokes
 
-This module manages the Unphone's graphical user interface using a custom framework built on Adafruit GFX derived from `everything`.
+In your main main.cpp or .ino file, you can control the keyboard using the BleKeyboard object, typically initialized like this:
+`#include <BleKeyboard.h>
 
-* **`UIController` Class:** Manages different UI "modes" or screens.
-* **Menu Item Addition:**
-    * `UIController::ui_mode_names[]`: Array updated with "DinoGame Controller".
-    * `UIController::NUM_UI_ELEMENTS`: Incremented to reflect the new item.
-    * `ui_modes_t` enum (in `unPhoneUI0.h`): A new enum member (e.g., `ui_dino_controller`) added, corresponding to the new menu item's index.
-* **`DinoGameControllerUIElement` Class:**
-    * A new class derived from `UIElement`.
-    * **`draw()` method:** Renders the custom game controller screen using Adafruit GFX commands (e.g., displays a title, draws a visual "Player[num]" area). Includes a "switcher" icon to return to the main menu.
-    * **`handleTouch()` method:** Processes touch input on this screen.
-        * Handles touches on the "switcher" icon to return to the main menu.
-    * `runEachTurn()`: For any periodic logic specific to this screen.
-* **`UIController::allocateUIElement()`:** Modified with a new `case` statement to create an instance of `DinoGameControllerUIElement` when the corresponding menu item is selected.
+BleKeyboard bleKeyboard;
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Starting BLE keyboard...");
+  bleKeyboard.begin();
+}
+
+void loop() {
+  if(bleKeyboard.isConnected()) {
+    // Send the text "Hello World" followed by the Enter key
+    bleKeyboard.print("Hello World!"); 
+    bleKeyboard.write(KEY_RETURN);
+    delay(5000); // Wait 5 seconds before repeating
+  }
+}`.
+
+For more complex key combinations (like Ctrl+C or media keys), consult the ESP32-NimBLE-Keyboard examples.
 
 ## Setup and Configuration (ESP32 - Unphone Side)
 

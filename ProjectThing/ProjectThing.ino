@@ -14,9 +14,11 @@
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <Adafruit_LSM6DS3TRC.h>
+#include <BleKeyboard.h>
 
 const uint16_t kIrLedPin = 12;
 IRsend irsend(kIrLedPin);
+BleKeyboard unphoneLauncher("unPhone NimBLE Launch", "unPhone Co.", 100);
 
 unPhone u = unPhone("everything");
 
@@ -99,19 +101,10 @@ void setup() { ///////////////////////////////////////////////////////////////
   u.provisioned();              // redisplay the UI for example
   //ledTest(); // TODO on spin 7 LEDs don't work when UI0 is enabled
   irsend.begin();
-  // --- Initialize IMU (LSM6DSx) ---
-  Serial.println("Attempting to initialize LSM6DSx IMU...");
-  if (!lsm6ds.begin_I2C()) {
-    Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    Serial.println("Failed to find LSM6DSx chip via I2C!");
-    Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    while (1) {
-      delay(100); // Halt program
-    }
-  }
-  Serial.println("LSM6DSx chip found and initialized!");
-  lsm6ds.setAccelRange(LSM6DS_ACCEL_RANGE_16_G);
-  lsm6ds.setGyroRange(LSM6DS_GYRO_RANGE_500_DPS);
+
+  // Start the BLE HID Service
+  unphoneLauncher.begin();
+  Serial.println("NimBLE Keyboard service started. Ready to pair.");
 
   Serial.println("done with setup()");
 }
@@ -130,80 +123,30 @@ void loop() { ////////////////////////////////////////////////////////////////
   if(loopIter % 25000 == 0) // allow IDLE; 100 is min to allow it to fire:
     delay(100);  // https://github.com/espressif/arduino-esp32/issues/6946
 
-  // Dino Game implementation
-  if(u.getDinoGameFlag()){
-    sensors_event_t accel_event;
-    sensors_event_t gyro_event;
-    sensors_event_t temp_event; 
-    lsm6ds.getEvent(&accel_event, &gyro_event, &temp_event);
+  // GeeyBoard Implementation //////////////////////////////
 
-    // --- FOR DEBUGGING AXES AND VALUES ---
-    // Serial.print("AY: "); Serial.print(accel_event.acceleration.y, 2);
-    // Serial.print(" GX: "); Serial.println(gyro_event.gyro.x, 2);      
-    // --- END DEBUGGING PRINTOUT ---
-    delay(100);
-
-    if (millis() - lastFlickTime > FLICK_COOLDOWN_MS) {
-        flickDetectedRecently = false;
-    }
-    if (!flickDetectedRecently) {
-      float currentGyroX = gyro_event.gyro.x;
-      float currentAccelY = accel_event.acceleration.y;
-
-      if (currentGyroX > FLICK_GYRO_X_THRESHOLD && currentAccelY > FLICK_ACCEL_Y_THRESHOLD) {
-        Serial.println("Potential Flick UP Detected!");
-        Serial.print("Gyro X (rad/s): "); Serial.println(currentGyroX);
-        Serial.print("Accel Y (m/s^2): "); Serial.println(currentAccelY);
-
-        //WEBSOCKET Version ------------------------------
-        HTTPClient http; 
-        String serverPath = "http://" + String(host) + ":" + String(port) + "/jump2";
-
-        Serial.print("Requesting URL: ");
-        Serial.println(serverPath);
-
-        // Start the HTTP request
-        http.begin(serverPath.c_str());
-
-        // Send the GET request
-        int httpResponseCode = http.GET();
-
-        // Check the response
-        if (httpResponseCode > 0) {
-          Serial.print("HTTP Response code: ");
-          Serial.println(httpResponseCode);
-
-        } else {
-          Serial.print("Error sending GET request, HTTP Error Code: ");
-          Serial.println(httpResponseCode);
-        }
-
-        // Free resources
-        http.end();
-
-        flickDetectedRecently = true;
-        lastFlickTime = millis();
-      }
-    }
-  }
   if (u.button1()){
     Serial.println("Tringle button is pressed");
-      HTTPClient http;
-      String serverPath = "http://" + String(host) + ":" + String(port) + "/jump2";
-      Serial.print("Requesting URL: ");
-      Serial.println(serverPath);
-      http.begin(serverPath.c_str());
-      int httpResponseCode = http.GET();
-      if (httpResponseCode > 0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode); 
-      } else {
-        Serial.print("Error sending GET request, HTTP Error Code: ");
-        Serial.println(httpResponseCode);
-      }
-      // Free resources
-      http.end();
-      delay(250);
+    if (unphoneLauncher.isConnected()) {
+
+    // 2. Check if the button is pressed (pin goes LOW)
+    Serial.println("Button Pressed! Sending launch command (Ctrl+Alt+F12)...");
+
+    // The key codes are the same: KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_F12
+    unphoneLauncher.press(KEY_LEFT_CTRL);
+    unphoneLauncher.press(KEY_LEFT_ALT);
+    unphoneLauncher.press(KEY_F12); 
+
+    delay(100); 
+    unphoneLauncher.releaseAll(); 
+
+    // Debouncing: Wait for the button to be released
+    while (u.button1()) {
+      delay(50);
+    }
+
+    Serial.println("Command sent.");
+  }
   }
   if (u.button3()){
     Serial.println("Square button is pressed");
