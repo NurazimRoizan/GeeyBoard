@@ -1,0 +1,23 @@
+Word prediction generator
+===
+
+
+From a list of words ordered by frequency generate state transition tables to
+suggest possible completions.
+
+Files:
+
+- `Makefile`: build recipes
+  - `make predict`: regenerate the tables and recompile the example main as
+    `predict`
+  - `make c-loop`: run `[edit]/compile/test` loop
+- `build-word-tables.py` and `hash-model.py`: do the hard work (thanks Mark
+  H!), creating `predictor.h`
+- `notes.mkd`: some examples of how the transition tables and symbol lists
+  work
+- `predictor.h` and `predictor.cpp`: define the Predictor class and its
+  (generated) data
+- `symbol-pad.png`: a reminder of what phones used to look like :)
+- `words-by-freq.txt`: symlink to the word list you're working with
+- `words-by-freq-BIG.txt`: 10k words
+- `words-by-freq-SMALL.txt`: a tiny list useful for development

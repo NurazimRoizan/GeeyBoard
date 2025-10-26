@@ -1,0 +1,40 @@
+An unPhone example with a bit of everything
+===
+
+To build this using PlatformIO core in docker there are two options using
+either the simple scripts `./build.ps1` or `./build.sh` or the `magic.sh`
+script:
+
+In linux:
+
+```bash
+./build.sh
+```
+
+or windows:
+
+```powershell
+./build.ps1
+```
+
+Then use [Adafruit's WebSerial flash
+tool](https://adafruit.github.io/Adafruit_WebSerial_ESPTool/) to burn the
+firmware to the device.
+
+Equivalently:
+
+```
+.../the-internet-of-things/support/magic.sh -D
+pio run -e unphone9 -t upload -t monitor
+```
+
+To build this with the Arduino IDE you need to:
+
+- unpack `unphone/libraries9.zip` to `Arduino/libraries`
+
+Notes:
+
+- substitute "7" for "9" above if building for unphone7
+- the build will parameterise compilation via `sketch/build_opt.h`, which
+  [works like
+  this](https://github.com/stm32duino/wiki/wiki/Customize-build-options-using-build_opt.h)
