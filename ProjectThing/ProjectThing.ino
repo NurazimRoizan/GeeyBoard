@@ -19,7 +19,7 @@
 
 const uint16_t kIrLedPin = 12;
 IRsend irsend(kIrLedPin);
-BleKeyboard unphoneLauncher("unPhone NimBLE Launch", "unPhone Co.", 100);
+BleKeyboard bleKeyboard("unPhone9 Geey", "unPhone Co.", 100);
 
 unPhone u = unPhone("everything");
 
@@ -90,9 +90,9 @@ void setup() { ///////////////////////////////////////////////////////////////
   irsend.begin();
 
   // Start the BLE HID Service
-  unphoneLauncher.onConnect([](){ Serial.println("onConnect"); });
-  unphoneLauncher.onDisconnect([](){ Serial.println("onDisconnect"); });
-  unphoneLauncher.begin();
+  bleKeyboard.onConnect([](){ Serial.println("onConnect"); });
+  bleKeyboard.onDisconnect([](){ Serial.println("onDisconnect"); });
+  bleKeyboard.begin();
   Serial.println("NimBLE Keyboard service started. Ready to pair.");
 
   Serial.println("done with setup()");
@@ -116,18 +116,15 @@ void loop() { ////////////////////////////////////////////////////////////////
 
   if (u.button1()){
     Serial.println("Tringle button is pressed");
-    if (unphoneLauncher.isConnected()) {
+    if (bleKeyboard.isConnected()) {
 
     // 2. Check if the button is pressed (pin goes LOW)
     Serial.println("Button Pressed! Sending launch command (Ctrl+Alt+F12)...");
 
     // The key codes are the same: KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_F12
-    unphoneLauncher.press(KEY_LEFT_CTRL);
-    unphoneLauncher.press(KEY_LEFT_ALT);
-    unphoneLauncher.press(KEY_F12); 
-
+    bleKeyboard.press(KEY_DOWN_ARROW);
     delay(100); 
-    unphoneLauncher.releaseAll(); 
+    bleKeyboard.releaseAll(); 
 
     // Debouncing: Wait for the button to be released
     while (u.button1()) {
@@ -142,8 +139,14 @@ void loop() { ////////////////////////////////////////////////////////////////
     irsend.sendNEC(0x20DF10EF, 32);
     Serial.println("Done sending infrared burst");
     Serial.println("Sending Play/Pause media key...");
-    unphoneLauncher.write(KEY_MEDIA_PLAY_PAUSE);
+    bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
 
+  }
+  if (u.button2()){
+    irsend.sendPanasonic64(0x40040100BCBD, 48);
+    Serial.println("Middle button is pressed");
+    bleKeyboard.press(KEY_TAB);
+    bleKeyboard.releaseAll();
   }
   
 }

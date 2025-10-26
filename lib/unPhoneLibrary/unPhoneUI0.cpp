@@ -10,6 +10,9 @@
 #include "unPhoneUI0.h"
 #include <WiFi.h>                 // status for config scrn
 #include <Adafruit_ImageReader.h> // image-reading for test card scrn
+#include <BleKeyboard.h>
+
+extern BleKeyboard bleKeyboard;
 
 static unPhone *up;
 
@@ -1178,7 +1181,20 @@ void GeeyBoardUIElement::draw(){
 }
 
 void GeeyBoardUIElement::runEachTurn(){
-  
+  //check if bluetooth still connected
+  static bool lastConnected = false;
+    bool currentConnected = bleKeyboard.isConnected();
+
+    if (currentConnected != lastConnected) {
+        // Redraw the status text if connection status changed
+        m_tft->setTextSize(1);
+        m_tft->setCursor(15, 15);
+        // Clear the previous text first (width 100, height 10 is safe for size 1 text)
+        clearText();
+        m_tft->setTextColor(currentConnected ? GREEN : RED);
+        m_tft->print(currentConnected ? "BLE Connected" : "BLE Disconnected");
+        lastConnected = currentConnected;
+    }
 }
 
 void GeeyBoardUIElement::clearText(){
@@ -1197,9 +1213,9 @@ void GeeyBoardUIElement::drawTextBoxes() {
   m_tft->setTextColor(BLUE);
   const uint8_t NUMLABELS = 12;
   const char *labels[NUMLABELS] = {
-    " ok",
-    " ABC", "DEF", " GHI", " JKL", "MNO", "PQRS", " TUV", "WXYZ",
-    " del", "  _", ""
+    "Play",
+    "Next", "Vol+", "Close", "Prev", "Vol-", "Utube", "Stremio", "Music",
+    "Ok", "<<>>", ""
   };
   for(int i = 0, x = 30, y = 190; i < NUMLABELS; i++) {
     for(int j = 0; j < 3; j++, i++) {
@@ -1256,29 +1272,91 @@ bool GeeyBoardUIElement::handleTouch(long x, long y) {
     int8_t symbol = mapTextTouch(x, y);
     D("sym=%d, ", symbol)
 
+    //"Play", "Next", "Vol+", "Close", "Prev", "Vol-", "Utube", "Stremio", "Music", "Enter", "Terminal", ""
+
     if(symbol == 0) { // "ok"
       //what happen when ok is pressed
       clearText();
       m_tft->setTextSize(1);
       m_tft->setTextColor(RED);
-      m_tft->setCursor(15, 15); m_tft->print("OK!");
-    } else if(symbol >= 1 && symbol <= 8) { // next char
-      //happen when 1 - 8 symbol
-      m_tft->setTextSize(1);
-      m_tft->setTextColor(RED);
-      m_tft->setCursor(15, 15); m_tft->print(symbol);
-    } else if(symbol ==  9) { // delete
+      m_tft->setCursor(15, 15); m_tft->print("Play/Pause");
+      bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
+    } else if(symbol ==  1) { // Next
       //delete button pressed
       clearText();
       m_tft->setTextSize(1);
       m_tft->setTextColor(RED);
-      m_tft->setCursor(15, 15); m_tft->print("Delete!");
-    } else if(symbol == 10) { // "  _" / ?2
+      m_tft->setCursor(15, 15); m_tft->print("Next!");
+      bleKeyboard.write(KEY_MEDIA_NEXT_TRACK);
+    } else if(symbol ==  2) { // Vol+
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Vol+");
+      bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
+    } else if(symbol ==  3) { // Alt+F4
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Alt+F4");
+      bleKeyboard.press(KEY_LEFT_ALT);
+      bleKeyboard.press(KEY_F4);
+      delay(100);
+      bleKeyboard.releaseAll();
+    } else if(symbol ==  4) { // Prev
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Previous!");
+      bleKeyboard.write(KEY_MEDIA_PREVIOUS_TRACK);
+    } else if(symbol ==  5) { // Vol-
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Vol-!");
+      bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
+    } else if(symbol ==  6) { // Utube
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("utube");
+      bleKeyboard.print("freetube");
+    } else if(symbol ==  7) { // Stremio
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("stremio");
+      bleKeyboard.print("flatpak run com.stremio.Stremio");
+    } else if(symbol ==  8) { // music
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("music");
+      bleKeyboard.print("freetube");
+    } else if(symbol ==  9) { // Enter
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Enter!");
+      bleKeyboard.write(KEY_RETURN);
+    } else if(symbol == 10) { // "terminal"
       // TODO
       clearText();
       m_tft->setTextSize(1);
       m_tft->setTextColor(RED);
-      m_tft->setCursor(15, 15); m_tft->print("----!");
+      m_tft->setCursor(15, 15); m_tft->print("Terminal");
+      bleKeyboard.press(KEY_LEFT_GUI);
+      bleKeyboard.write('t');
+      delay(100);
+      bleKeyboard.releaseAll();
     } else if(symbol == 11) { // mode switcher arrow
       return true;
     }
