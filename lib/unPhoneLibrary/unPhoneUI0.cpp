@@ -26,8 +26,9 @@ const char *UIController::ui_mode_names[] = {
   "Factory test rig",
   "Homeyyy",
   "Dino Game",
+  "GeeyBoard"
 };
-uint8_t UIController::NUM_UI_ELEMENTS = 8;  // number of UI elements
+uint8_t UIController::NUM_UI_ELEMENTS = 9;  // number of UI elements
 
 // keep Arduino IDE compiler happy /////////////////////////////////////////
 UIElement::UIElement(Adafruit_HX8357* tftp, XPT2046_Touchscreen* tsp, SdFat *sdp) {
@@ -90,6 +91,8 @@ UIElement* UIController::allocateUIElement(ui_modes_t newMode) {
       m_element = new TestRigUIElement(up->tftp, up->tsp, up->sdp);     break;
     case ui_dinogamecontroller:
       m_element = new DinoGameUIElement(up->tftp, up->tsp, up->sdp);     break;
+    case ui_geeyboard:
+      m_element = new GeeyBoardUIElement(up->tftp, up->tsp, up->sdp);     break;
     default:
       Serial.printf("invalid UI mode %d in allocateUIElement\n", newMode);
       m_element = m_menu;
@@ -146,6 +149,7 @@ const char *UIController::modeName(ui_modes_t m) {
     case ui_etchasketch:        return "ui_etchasketch";   break;
     case ui_testrig:            return "ui_testrig";       break;
     case ui_dinogamecontroller: return "ui_dinogamecontroller"; break;
+    case ui_geeyboard: return "ui_geeyboard"; break;
     default:
       D("invalid UI mode %d in allocateUIElement\n", m)
       return "invalid UI mode";
@@ -1142,6 +1146,143 @@ bool DinoGameUIElement::handleTouch(long x, long y) {
     m_tft->setCursor(15, 300); m_tft->print("JUMP!");
   }
   return y < BOXSIZE && x > (BOXSIZE * SWITCHER);
+}
+
+////////////////////////////////////////////////
+///////// GeeyBoard CONTROLLER ////////////////
+/**
+ * Show initial screen.
+ */
+void GeeyBoardUIElement::draw(){
+  drawTextBoxes();
+  drawSwitcher(255, 420);
+  up->setGeeyBoardFlag(true);
+  m_tft->setTextSize(3);
+  m_tft->setTextColor(YELLOW);
+  m_tft->setCursor(15,  45); m_tft->print("GeeyBoard");
+  m_tft->setCursor(15,  80); m_tft->print("Controller");
+  // m_tft->setCursor(15, 115); m_tft->print("Flick upwards");
+  // m_tft->setCursor(15, 150); m_tft->print("to jump");
+  
+  // up->tftp->drawRect(15, 200, 145, 70, HX8357_MAGENTA);
+  // up->tftp->drawRect(160, 200, 145, 70, HX8357_MAGENTA);
+  // up->tftp->setTextSize(3);
+  // up->tftp->setCursor(25,220);
+  // up->tftp->setTextColor(HX8357_CYAN);
+  // up->tftp->print("Play/Pause");
+  // up->tftp->setTextSize(3);
+  // up->tftp->setCursor(155,220);
+  // up->tftp->setTextColor(HX8357_CYAN);
+  // up->tftp->print("Shortcut");
+  // return;
+}
+
+void GeeyBoardUIElement::runEachTurn(){
+  
+}
+
+void GeeyBoardUIElement::clearText(){
+  m_tft->fillRect(15, 15, 60, 10, BLACK);
+}
+
+void GeeyBoardUIElement::drawTextBoxes() {
+  for(int y = 160; y < 480; y += 80)
+    m_tft->drawFastHLine(0, y, 320, MAGENTA);
+    m_tft->drawFastHLine(0, 479, 320, MAGENTA);
+  for(int x = 0; x < 480; x += 107)
+    m_tft->drawFastVLine(x, 160, 320, MAGENTA);
+  m_tft->drawFastVLine(319, 160, 320, MAGENTA);
+
+  m_tft->setTextSize(2);
+  m_tft->setTextColor(BLUE);
+  const uint8_t NUMLABELS = 12;
+  const char *labels[NUMLABELS] = {
+    " ok",
+    " ABC", "DEF", " GHI", " JKL", "MNO", "PQRS", " TUV", "WXYZ",
+    " del", "  _", ""
+  };
+  for(int i = 0, x = 30, y = 190; i < NUMLABELS; i++) {
+    for(int j = 0; j < 3; j++, i++) {
+      m_tft->setCursor(x, y);
+      if(i == 0 || i == 9 || i == 10) m_tft->setTextColor(WHITE);
+      m_tft->print(labels[i]);
+      if(i == 0 || i == 9 || i == 10) m_tft->setTextColor(BLUE);
+      x += 107;
+      if(x > 344) x = 30;
+    }
+    i--;
+    y += 80;
+    if(y > 430) y = 190;
+  }
+}
+
+uint16_t debugCursor1 = 0;
+int8_t GeeyBoardUIElement::mapTextTouch(long xInput, long yInput) { ///////////
+  int8_t sym = -1; // symbol
+  int8_t row = 0;  // rows (0 is above the text entry area)
+  int8_t col = 1;  // columns
+
+  for(int y = 160, i = 1; y < 480; y += 80, i++)
+    if(yInput > y) row = i;
+  for(int x = 107, i = 2; x < 480; x += 107, i++)
+    if(xInput > x) col = i;
+  if(row > 0 && col >= 1)
+    sym = (( (row - 1) * 3) + col) - 1;
+
+  // D("row=%d, col=%d, sym=%d\n", row, col, sym)
+
+  m_tft->setTextColor(WHITE, BLACK);
+  char s[5];
+  sprintf(s, "%2d,", sym);
+  m_tft->setCursor(debugCursor1,150);
+  debugCursor1 += 3;
+  if(debugCursor1 > 280) debugCursor1 = 0;
+  // uncomment for debug sym printing: m_tft->print(s);
+  return sym;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+/**
+ * Function that handles the touch on this page
+ * 
+ * @param x - the x coordinate of the touch 
+ * @param y - the y coordinate of the touch 
+ * @returns bool - true if the touch is on the switcher
+ */
+bool GeeyBoardUIElement::handleTouch(long x, long y) {
+  m_tft->setTextColor(WHITE, BLACK);
+    // D("text mode: responding to touch @ %d/%d/%d: ", x, y,-1)
+
+    int8_t symbol = mapTextTouch(x, y);
+    D("sym=%d, ", symbol)
+
+    if(symbol == 0) { // "ok"
+      //what happen when ok is pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("OK!");
+    } else if(symbol >= 1 && symbol <= 8) { // next char
+      //happen when 1 - 8 symbol
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print(symbol);
+    } else if(symbol ==  9) { // delete
+      //delete button pressed
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("Delete!");
+    } else if(symbol == 10) { // "  _" / ?2
+      // TODO
+      clearText();
+      m_tft->setTextSize(1);
+      m_tft->setTextColor(RED);
+      m_tft->setCursor(15, 15); m_tft->print("----!");
+    } else if(symbol == 11) { // mode switcher arrow
+      return true;
+    }
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////

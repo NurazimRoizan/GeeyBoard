@@ -14,6 +14,7 @@
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <Adafruit_LSM6DS3TRC.h>
+#include <Arduino.h>
 #include <BleKeyboard.h>
 
 const uint16_t kIrLedPin = 12;
@@ -29,21 +30,7 @@ void wifiSetup();               // ...the wifi...
 void wifiConnectTask(void *);   // ...connection
 WiFiClient client; 
 const char* host = "192.168.0.23"; // e.g., "192.168.1.100"
-const int port = 3000;                    
-const int liveport = 3000;       
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
-//accelerometer and gyro
-Adafruit_LSM6DS3TRC lsm6ds;
-// --- Flick Detection Parameters (NEEDS TUNING!) ---
-const float FLICK_GYRO_X_THRESHOLD = -2.5;  // Radians per second (rad/s) - example value.
-                                          // Libraries might return rad/s or dps. Adafruit_Sensor events are usually SI (rad/s).
-const float FLICK_ACCEL_Y_THRESHOLD = 6.0; // m/s^2 - example value
-bool flickDetectedRecently = false;
-unsigned long lastFlickTime = 0;
-const unsigned long FLICK_COOLDOWN_MS = 1000; // 2 seconds cooldown
-
-
+const int port = 3000;                        
 
 void setup() { ///////////////////////////////////////////////////////////////
   // say hi, init, blink etc.
@@ -103,6 +90,8 @@ void setup() { ///////////////////////////////////////////////////////////////
   irsend.begin();
 
   // Start the BLE HID Service
+  unphoneLauncher.onConnect([](){ Serial.println("onConnect"); });
+  unphoneLauncher.onDisconnect([](){ Serial.println("onDisconnect"); });
   unphoneLauncher.begin();
   Serial.println("NimBLE Keyboard service started. Ready to pair.");
 
@@ -152,6 +141,8 @@ void loop() { ////////////////////////////////////////////////////////////////
     Serial.println("Square button is pressed");
     irsend.sendNEC(0x20DF10EF, 32);
     Serial.println("Done sending infrared burst");
+    Serial.println("Sending Play/Pause media key...");
+    unphoneLauncher.write(KEY_MEDIA_PLAY_PAUSE);
 
   }
   

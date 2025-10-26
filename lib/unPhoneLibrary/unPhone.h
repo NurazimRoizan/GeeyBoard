@@ -51,6 +51,11 @@ public:
   bool m_dinoGameStarted = false;
   void setDinoGameFlag(bool flag){m_dinoGameStarted = flag;}
   bool getDinoGameFlag(){return m_dinoGameStarted;}
+  // Required method for GeeyBoard UI
+  bool m_geeyBoardOpen = false;
+  void setGeeyBoardFlag(bool flag){m_geeyBoardOpen = flag;}
+  bool getGeeyBoardFlag(){return m_geeyBoardOpen;}
+  
 #if UNPHONE_SPIN == 7 // version 7 pindefs ///////////////////////////////////
   static const uint8_t LCD_RESET        =  1 | 0x40; // if |0x40 is on TCA9555
   static const uint8_t BACKLIGHT        =  2 | 0x40;

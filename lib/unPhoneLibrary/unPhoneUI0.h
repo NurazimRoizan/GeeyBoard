@@ -30,9 +30,9 @@ class UIElement { ///////////////////////////////////////////////////////////
     const uint8_t  HALFBOX = (BOXSIZE / 2);
     const uint8_t  QUARTBOX = (BOXSIZE / 4);
     const uint8_t  PENRADIUS = 9; // orig: 3
-    static const uint8_t NUM_BOXES = 8;
+    static const uint8_t NUM_BOXES = 9;
     const uint16_t colour2box[NUM_BOXES] = {
-      RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA, WHITE, RED
+      RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA, WHITE, RED, RED
     };
     const uint8_t SWITCHER = 7; // index of the switcher
     void drawSwitcher(uint16_t xOrigin = 0, uint16_t yOrigin = 0);
@@ -55,7 +55,8 @@ enum ui_modes_t {
   ui_etchasketch,       //  4
   ui_testrig,           //  5
   ui_configure,         //  6 (home)
-  ui_dinogamecontroller
+  ui_dinogamecontroller,// 7
+  ui_geeyboard, // 8
 };
 
 class UIController { ////////////////////////////////////////////////////////
@@ -159,6 +160,7 @@ class EtchASketchUIElement: public UIElement { //////////////////////////////
     void draw();
     void runEachTurn();
 };
+
 class DinoGameUIElement: public UIElement { //////////////////////////////
   private:
   public:
@@ -167,6 +169,19 @@ class DinoGameUIElement: public UIElement { //////////////////////////////
     bool handleTouch(long, long);
     void draw();
     void runEachTurn();
+};
+
+class GeeyBoardUIElement: public UIElement { //////////////////////////////
+  private:
+    void drawTextBoxes();
+    int8_t mapTextTouch(long, long);
+  public:
+    GeeyBoardUIElement(Adafruit_HX8357* tft, XPT2046_Touchscreen* ts, SdFat* sd)
+      : UIElement(tft, ts, sd) { };
+    bool handleTouch(long, long);
+    void draw();
+    void runEachTurn();
+    void clearText();
 };
 
 class TestRigUIElement: public UIElement { ///////////////////////////////////
