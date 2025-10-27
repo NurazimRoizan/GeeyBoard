@@ -33,18 +33,6 @@ The touch interface is configured to support both common character input and ess
 * **BLE HID Emulation:** Presents itself to host devices (Windows, macOS, Android, Linux) as a standard Bluetooth keyboard.
 * **Special Keys Implemented in unPhoneUI0.cpp:**
 
-    * Windows/Super Key: Mapped to the "ok" button (symbol 0).
-    * Up Arrow: Mapped to the "ABC" cluster (symbol 1).
-    * Down Arrow: Mapped to the "DEF" cluster (symbol 2).
-    * Backspace: Mapped to the "delete" button (symbol 3).
-    * Spacebar: Mapped to the "_" button (symbol 4).
-    * Backspace: Mapped to the "delete" button (symbol 5).
-    * Spacebar: Mapped to the "_" button (symbol 6).
-    * Backspace: Mapped to the "delete" button (symbol 7).
-    * Spacebar: Mapped to the "_" button (symbol 8).
-    * Backspace: Mapped to the "delete" button (symbol 9).
-    * Spacebar: Mapped to the "_" button (symbol 10).
-
 | Touch Symbol | Touch Cluster | Key Code Sent | Function | 
 | :---: | :---: | :--- | :--- | 
 | `0` | **"Play"** | `KEY_MEDIA_PLAY_PAUSE` | **Play/Pause** | 
