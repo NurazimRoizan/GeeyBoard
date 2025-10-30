@@ -1198,7 +1198,7 @@ void GeeyBoardUIElement::runEachTurn(){
 }
 
 void GeeyBoardUIElement::clearText(){
-  m_tft->fillRect(15, 15, 60, 10, BLACK);
+  m_tft->fillRect(15, 15, 100, 10, BLACK);
 }
 
 void GeeyBoardUIElement::drawTextBoxes() {
@@ -1332,7 +1332,11 @@ bool GeeyBoardUIElement::handleTouch(long x, long y) {
       m_tft->setTextSize(1);
       m_tft->setTextColor(RED);
       m_tft->setCursor(15, 15); m_tft->print("stremio");
-      bleKeyboard.print("flatpak run com.stremio.Stremio");
+      bleKeyboard.print("flatpak run");
+      delay(100);
+      bleKeyboard.print("com.stremio.");
+      delay(100);
+      bleKeyboard.print("Stremio");
     } else if(symbol ==  8) { // music
       //delete button pressed
       clearText();

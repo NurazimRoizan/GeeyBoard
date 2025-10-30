@@ -90,8 +90,12 @@ void setup() { ///////////////////////////////////////////////////////////////
   irsend.begin();
 
   // Start the BLE HID Service
-  bleKeyboard.onConnect([](){ Serial.println("onConnect"); });
-  bleKeyboard.onDisconnect([](){ Serial.println("onDisconnect"); });
+  bleKeyboard.onDisconnect([](){
+    Serial.println("onDisconnect");
+    // Blink LED
+    u.rgb(1, 0, 0); delay(300); u.rgb(0, 1, 0); delay(300);
+    u.rgb(0, 0, 1); delay(300); u.rgb(0, 0, 0); delay(300);
+  });
   bleKeyboard.begin();
   Serial.println("NimBLE Keyboard service started. Ready to pair.");
 
@@ -116,27 +120,23 @@ void loop() { ////////////////////////////////////////////////////////////////
 
   if (u.button1()){
     Serial.println("Tringle button is pressed");
-    if (bleKeyboard.isConnected()) {
+    if (!(bleKeyboard.isConnected())) {
+      bleKeyboard.end();
+      delay(1000); 
+      bleKeyboard.begin();
 
-    // 2. Check if the button is pressed (pin goes LOW)
-    Serial.println("Button Pressed! Sending launch command (Ctrl+Alt+F12)...");
-
-    // The key codes are the same: KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_F12
-    bleKeyboard.press(KEY_DOWN_ARROW);
-    delay(100); 
-    bleKeyboard.releaseAll(); 
-
-    // Debouncing: Wait for the button to be released
-    while (u.button1()) {
-      delay(50);
+      // Debouncing: Wait for the button to be released
+      while (u.button1()) {
+        delay(200);
+      }
+      Serial.println("Resetting Bluetooth.");
+    } else{
+      Serial.println("Bluetooth already connected.");
     }
-
-    Serial.println("Command sent.");
-  }
   }
   if (u.button3()){
     Serial.println("Square button is pressed");
-    irsend.sendNEC(0x20DF10EF, 32);
+    // irsend.sendNEC(0x20DF10EF, 32);
     Serial.println("Done sending infrared burst");
     Serial.println("Sending Play/Pause media key...");
     bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
