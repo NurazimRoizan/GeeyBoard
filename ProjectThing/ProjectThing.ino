@@ -19,7 +19,7 @@
 
 const uint16_t kIrLedPin = 12;
 IRsend irsend(kIrLedPin);
-BleKeyboard bleKeyboard("unPhone9 Geey", "unPhone Co.", 100);
+BleKeyboard bleKeyboard;
 
 unPhone u = unPhone("everything");
 
@@ -90,12 +90,6 @@ void setup() { ///////////////////////////////////////////////////////////////
   irsend.begin();
 
   // Start the BLE HID Service
-  bleKeyboard.onDisconnect([](){
-    Serial.println("onDisconnect");
-    // Blink LED
-    u.rgb(1, 0, 0); delay(300); u.rgb(0, 1, 0); delay(300);
-    u.rgb(0, 0, 1); delay(300); u.rgb(0, 0, 0); delay(300);
-  });
   bleKeyboard.begin();
   Serial.println("NimBLE Keyboard service started. Ready to pair.");
 
@@ -120,18 +114,10 @@ void loop() { ////////////////////////////////////////////////////////////////
 
   if (u.button1()){
     Serial.println("Tringle button is pressed");
-    if (!(bleKeyboard.isConnected())) {
-      bleKeyboard.end();
-      delay(1000); 
-      bleKeyboard.begin();
-
-      // Debouncing: Wait for the button to be released
-      while (u.button1()) {
-        delay(200);
-      }
-      Serial.println("Resetting Bluetooth.");
-    } else{
-      Serial.println("Bluetooth already connected.");
+    Serial.println("ending bleKeyboard process");
+    bleKeyboard.end();
+    while (u.button1()) {
+        delay(1000);
     }
   }
   if (u.button3()){
@@ -139,7 +125,14 @@ void loop() { ////////////////////////////////////////////////////////////////
     // irsend.sendNEC(0x20DF10EF, 32);
     Serial.println("Done sending infrared burst");
     Serial.println("Sending Play/Pause media key...");
-    bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
+    if (bleKeyboard.isConnected()){
+      bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
+    }else {
+      bleKeyboard.begin();
+    }
+    while (u.button3()) {
+        delay(1000);
+    }
 
   }
   if (u.button2()){
